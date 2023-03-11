@@ -108,12 +108,8 @@ async fn notify_data<'a>(
     //saadc: &'a mut Saadc<'_, 1>,
 ) {
     loop {
-        let mut buf = [0i16; 1];
-        //saadc.sample(&mut buf).await;
-
-        //let adc_raw_value: i16 = buf[0];
-
-        //let adc_raw_value: i16 = 1234;
+        
+        // no real data gathering, just a static value to test it
 
         let batt_level: u8 = 123;
 
