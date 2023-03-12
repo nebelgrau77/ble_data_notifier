@@ -34,7 +34,6 @@ use ble_softdev_test::{
     };
 
 
-/*
 
 //-- not necessary right now --//
 
@@ -49,7 +48,6 @@ fn init_adc(adc_pin: AnyInput, adc: SAADC) -> Saadc<'static, 1> {
     saadc
 }
 
- */
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -62,9 +60,16 @@ async fn main(spawner: Spawner) {
     let p = embassy_nrf::init(config);
 
 
-    //let board = Board::init(p);
+    let board = Board::init(p);
 
     //let mut led = board.led;
+
+    let mut adc_pin = board.a0;
+
+    // get the ADC
+    let mut saadc = init_adc(adc_pin, p.SAADC);
+    // Indicated: wait for ADC calibration.
+    saadc.calibrate().await;
 
     // Enable SoftDevice
     let sd = nrf_softdevice::Softdevice::enable(&sd::softdevice_config());
