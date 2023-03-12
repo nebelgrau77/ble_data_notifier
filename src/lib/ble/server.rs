@@ -17,6 +17,7 @@ use nrf_softdevice::{
 use static_cell::StaticCell;
 
 /// BLE advertising data
+
 #[rustfmt::skip]
 const ADV_DATA: &[u8] = 
     &[
@@ -25,13 +26,15 @@ const ADV_DATA: &[u8] =
         0x09, 0x09, b'B', b'l', b'u', b'e', b'T', b'e', b's', b't', 
     ];
 
-/// BLE scan data
+// BLE scan data
 #[rustfmt::skip]
 const SCAN_DATA: &[u8] = &[
     0x03, 0x03, 0x0F, 0x18, 
     ];
 
+
 /// BLE GATT server
+
 #[nrf_softdevice::gatt_server]
 pub struct Server {
     /// Battery service
@@ -49,19 +52,25 @@ pub async fn ble_server_task(spawner: Spawner, server: Server, sd: &'static Soft
     info!("BLE is ON!");
 
     let config = peripheral::Config::default();
+
     let adv = peripheral::ConnectableAdvertisement::ScannableUndirected { 
         adv_data: ADV_DATA,
-        scan_data: SCAN_DATA,
+        scan_data: SCAN_DATA,        
     };
-
+    
     loop {
-         match peripheral::advertise_connectable(sd, adv, &config).await {
+
+    
+        match peripheral::advertise_connectable(sd, adv, &config).await {
             Ok(conn) => {
                 unwrap!(spawner.spawn(conn_task(server, conn)));
             }
             Err(e) => error!("{:?}",e),
          }
+
     }
+
+     
 
 }
 

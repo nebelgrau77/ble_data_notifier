@@ -62,9 +62,9 @@ async fn main(spawner: Spawner) {
     let p = embassy_nrf::init(config);
 
 
-    let board = Board::init(p);
+    //let board = Board::init(p);
 
-    let mut led = board.led;
+    //let mut led = board.led;
 
     // Enable SoftDevice
     let sd = nrf_softdevice::Softdevice::enable(&sd::softdevice_config());
@@ -84,9 +84,11 @@ async fn main(spawner: Spawner) {
     loop {
         
         Timer::after(Duration::from_millis(500)).await;
+        /*
         led.set_high();
         Timer::after(Duration::from_millis(250)).await;
         led.set_low();
+         */
         
     }
 }
