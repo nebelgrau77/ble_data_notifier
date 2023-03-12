@@ -66,7 +66,7 @@ pub async fn ble_server_task(spawner: Spawner, server: Server, sd: &'static Soft
             Ok(conn) => {
                 
                 
-                
+                // need saadc here
                 
                 unwrap!(spawner.spawn(conn_task(server, conn, &mut saadc)));
             }
@@ -80,7 +80,6 @@ pub async fn ble_server_task(spawner: Spawner, server: Server, sd: &'static Soft
 }
 
 /// BLE connection task. - is this needed???
-
 #[embassy_executor::task]
 async fn conn_task(
     server: &'static Server,
@@ -88,7 +87,7 @@ async fn conn_task(
     mut saadc: &'static Saadc<'_, 1>,
 
 ) {
-    let data_future = notify_data(&server, &conn, &mut saadc); 
+    let data_future = notify_data(server, &conn, &mut saadc);  // why can't saadc be borrowed as mutable?
     let gatt_future = gatt_server::run(&conn, server, |e| match e {
         ServerEvent::Batt(BatteryServiceEvent::BatteryLevelCccdWrite { notifications }) => {
             info!("battery notifications: {}", notifications);
