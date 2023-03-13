@@ -68,7 +68,7 @@ pub async fn ble_server_task(spawner: Spawner, server: Server, sd: &'static Soft
                 
                 // need saadc here
                 
-                unwrap!(spawner.spawn(conn_task(server, conn, &mut saadc)));
+                unwrap!(spawner.spawn(conn_task(server, conn)));
             }
             Err(e) => error!("{:?}",e),
          }
@@ -84,10 +84,10 @@ pub async fn ble_server_task(spawner: Spawner, server: Server, sd: &'static Soft
 async fn conn_task(
     server: &'static Server,
     conn: Connection,    
-    mut saadc: &'static Saadc<'_, 1>,
+    
 
 ) {
-    let data_future = notify_data(server, &conn, &mut saadc);  // why can't saadc be borrowed as mutable?
+    let data_future = notify_data(server, &conn);  // why can't saadc be borrowed as mutable?
     let gatt_future = gatt_server::run(&conn, server, |e| match e {
         ServerEvent::Batt(BatteryServiceEvent::BatteryLevelCccdWrite { notifications }) => {
             info!("battery notifications: {}", notifications);
@@ -119,18 +119,14 @@ async fn conn_task(
 /// Reads the current ADC value every second and notifies the connected client.
 async fn notify_data<'a>(server: &'a Server, 
                         connection: &'a Connection,
-                        saadc: &'a mut Saadc<'_, 1>,) 
+                        ) 
 {
     loop {
-        let mut buf = [0i16; 1];
-        saadc.sample(&mut buf).await;
-
-        // We only sampled one ADC channel.
-        let adc_raw_value: i16 = buf[0];
-
-        let batt_level: u8 = (((adc_raw_value / 256) + 128) * 100 / 255) as u8;
-
+                
+        let batt_level: u8 = crate::messages::ADC_SIGNAL.wait().await;
+        
         // Try and notify the connected client of the new ADC value.
+
         match server.batt.battery_level_notify(connection, &batt_level) {
             Ok(_) => info!("Battery adc_raw_value: {=u8}", &batt_level),
             Err(_) => unwrap!(server.batt.battery_level_set(&batt_level)),

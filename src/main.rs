@@ -31,22 +31,14 @@ use ble_softdev_test::{
     self as _,
     ble::{sd, server},
     device::Board,
+    messages,
     };
 
 
 
 //-- not necessary right now --//
 
-/// Initializes the SAADC peripheral in single-ended mode on the given pin.
-fn init_adc(adc_pin: AnyInput, adc: SAADC) -> Saadc<'static, 1> {
-    // Then we initialize the ADC. We are only using one channel in this example.
-    let config = saadc::Config::default();
-    let channel_cfg = saadc::ChannelConfig::single_ended(adc_pin.degrade_saadc());
-    let irq = interrupt::take!(SAADC);
-    irq.set_priority(interrupt::Priority::P3);
-    let saadc = saadc::Saadc::new(adc, irq, config, [channel_cfg]);
-    saadc
-}
+
 
 
 #[embassy_executor::main]
@@ -66,10 +58,13 @@ async fn main(spawner: Spawner) {
 
     let mut adc_pin = board.a0;
 
+    let mut batt_level: u8 = 0u8;
+   
+
     // get the ADC
-    let mut saadc = init_adc(adc_pin, p.SAADC);
+    //let mut saadc = init_adc(adc_pin, p.SAADC);
     // Indicated: wait for ADC calibration.
-    saadc.calibrate().await;
+    //saadc.calibrate().await;
 
     // Enable SoftDevice
     let sd = nrf_softdevice::Softdevice::enable(&sd::softdevice_config());
@@ -86,14 +81,21 @@ async fn main(spawner: Spawner) {
     unwrap!(spawner.spawn(server::ble_server_task(spawner, server, sd)));
 
 
+
     loop {
         
-        Timer::after(Duration::from_millis(500)).await;
-        /*
-        led.set_high();
-        Timer::after(Duration::from_millis(250)).await;
-        led.set_low();
-         */
         
+        batt_level = match batt_level {
+            101u8 => 0u8,
+            _ => batt_level + 1,
+        };
+        
+
+        //batt_level += 1;
+
+        messages::ADC_SIGNAL.signal(batt_level);
+        
+        Timer::after(Duration::from_millis(500)).await;
     }
 }
+
