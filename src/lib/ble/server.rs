@@ -126,13 +126,13 @@ async fn notify_data<'a>(server: &'a Server,
         let batt_level: u8 = crate::messages::ADC_SIGNAL.wait().await;
         
         // Try and notify the connected client of the new ADC value.
-
         match server.batt.battery_level_notify(connection, &batt_level) {
             Ok(_) => info!("Battery adc_raw_value: {=u8}", &batt_level),
             Err(_) => unwrap!(server.batt.battery_level_set(&batt_level)),
         };
 
-        // Sleep for one second.
-        Timer::after(Duration::from_secs(1)).await
+        // Sleep for one second.        
+        //Timer::after(Duration::from_secs(1)).await
+        
     }
 }

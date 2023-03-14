@@ -82,20 +82,17 @@ async fn main(spawner: Spawner) {
 
 
 
-    loop {
-        
+    loop {        
         
         batt_level = match batt_level {
             101u8 => 0u8,
             _ => batt_level + 1,
         };
-        
-
-        //batt_level += 1;
 
         messages::ADC_SIGNAL.signal(batt_level);
-        
+       
         Timer::after(Duration::from_millis(500)).await;
+
     }
 }
 
