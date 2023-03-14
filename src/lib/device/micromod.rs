@@ -1,6 +1,6 @@
 //! Board definition for MicroMod with ML carrier board
 use embassy_nrf::{
-    //gpio::{AnyPin, Input, Level, Output, OutputDrive, Pin, Pull},
+    gpio::{AnyPin, Level, Output, OutputDrive, Pin, Pull},
     interrupt::{self, InterruptExt, Priority},
     peripherals::{TWISPI0, UARTE0},
     twim::Twim,
@@ -10,17 +10,16 @@ use embassy_nrf::{
 
 pub struct Board {
     /// Onboard LED
-    //pub led: Output<'static, AnyPin>,    
+    pub led: Output<'static, AnyPin>,    
     pub twim: Twim<'static, TWISPI0>,
     pub uart: Uarte<'static, UARTE0>,
-    pub adc: Saadc<'static, 1>,
-    //pub a0: P0_04,    
+    pub adc: Saadc<'static, 1>,    
 }
 
 impl Board {
     /// Return board with concrete peripherals
     pub fn init(p: embassy_nrf::Peripherals) -> Board {
-        //let led = Output::new(p.P0_13.degrade(), Level::Low, OutputDrive::Standard);
+        let led = Output::new(p.P0_13.degrade(), Level::Low, OutputDrive::Standard);
 
         let adc_config = embassy_nrf::saadc::Config::default();
         let channel_cfg = embassy_nrf::saadc::ChannelConfig::single_ended(p.P0_04.degrade_saadc());
@@ -45,6 +44,7 @@ impl Board {
             twim,
             uart,
             adc,
+            led,
         }
 
     }

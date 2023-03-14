@@ -60,13 +60,9 @@ async fn main(spawner: Spawner) {
     let p = embassy_nrf::init(config);
 
     let board = Board::init(p);
-    //let mut led = board.led;
+    
+    let mut led = board.led;
 
-    //let adc_pin = p.P0_04.degrade_saadc();
-    //let adc_pin = board.a0.degrade_saadc();
-
-    // let mut batt_level: u8 = 0u8;
-   
     let mut adc = board.adc;
 
     // get the ADC
@@ -88,8 +84,6 @@ async fn main(spawner: Spawner) {
     // Run BLE server task - is that necessary?
     unwrap!(spawner.spawn(server::ble_server_task(spawner, server, sd)));
 
-
-
     loop {        
         
         let mut buf = [0i16; 1];
@@ -110,6 +104,12 @@ async fn main(spawner: Spawner) {
         messages::ADC_SIGNAL.signal(batt_level);
        
         Timer::after(Duration::from_millis(1000)).await;
+
+        if led.is_set_high() {
+            led.set_low()
+        } else {
+            led.set_high()
+        }
 
     }
 }
