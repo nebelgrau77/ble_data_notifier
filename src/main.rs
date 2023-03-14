@@ -32,13 +32,21 @@ use ble_softdev_test::{
     ble::{sd, server},
     device::Board,
     messages,
+    //helpers,
     };
 
 
-
-//-- not necessary right now --//
-
-
+/*
+pub fn init_adc(adc_pin: AnyInput, adc: SAADC) -> Saadc<'static, 1> {
+    // Then we initialize the ADC. We are only using one channel in this example.
+    let config = saadc::Config::default();
+    let channel_cfg = saadc::ChannelConfig::single_ended(adc_pin.degrade_saadc());
+    let irq = interrupt::take!(SAADC);
+    irq.set_priority(interrupt::Priority::P3);
+    let saadc = saadc::Saadc::new(adc, irq, config, [channel_cfg]);
+    saadc
+}
+ */
 
 
 #[embassy_executor::main]
@@ -51,20 +59,20 @@ async fn main(spawner: Spawner) {
     config.time_interrupt_priority = interrupt::Priority::P2;
     let p = embassy_nrf::init(config);
 
-
     let board = Board::init(p);
-
     //let mut led = board.led;
 
-    let mut adc_pin = board.a0;
+    //let adc_pin = p.P0_04.degrade_saadc();
+    //let adc_pin = board.a0.degrade_saadc();
 
-    let mut batt_level: u8 = 0u8;
+    // let mut batt_level: u8 = 0u8;
    
+    let mut adc = board.adc;
 
     // get the ADC
-    //let mut saadc = init_adc(adc_pin, p.SAADC);
+    //let mut saadc = helpers::init_adc(adc_pin, p.SAADC);
     // Indicated: wait for ADC calibration.
-    //saadc.calibrate().await;
+    adc.calibrate().await;
 
     // Enable SoftDevice
     let sd = nrf_softdevice::Softdevice::enable(&sd::softdevice_config());
@@ -84,14 +92,24 @@ async fn main(spawner: Spawner) {
 
     loop {        
         
+        let mut buf = [0i16; 1];
+        adc.sample(&mut buf).await;
+
+        // We only sampled one ADC channel.
+        let adc_raw_value: i16 = buf[0];
+
+        let batt_level: u8 = (((adc_raw_value / 256) + 128) * 100 / 255) as u8;
+
+        /*
         batt_level = match batt_level {
             101u8 => 0u8,
             _ => batt_level + 1,
         };
+         */
 
         messages::ADC_SIGNAL.signal(batt_level);
        
-        Timer::after(Duration::from_millis(500)).await;
+        Timer::after(Duration::from_millis(1000)).await;
 
     }
 }
