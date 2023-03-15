@@ -16,21 +16,20 @@ use nrf_softdevice::{
 };
 use static_cell::StaticCell;
 
-
 /// BLE advertising data
 
 #[rustfmt::skip]
 const ADV_DATA: &[u8] = 
     &[
         0x02, 0x01, nrf_softdevice::raw::BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE as u8,
-        0x05, 0x03, 0x0F, 0x18, 0x1a, 0x18,
+        0x05, 0x03, 0x0F, 0x18, 0x1a, 0x18, 
         0x09, 0x09, b'B', b'L', b'E', b's', b'e', b'n', b's', b'e', 
     ];
 
 // BLE scan data
 #[rustfmt::skip]
 const SCAN_DATA: &[u8] = &[
-    0x05, 0x03, 0x0F, 0x18, 0x1a, 0x18,
+    0x05, 0x03, 0x0F, 0x18, 0x1a, 0x18, 
     ];
 
 
@@ -40,7 +39,7 @@ const SCAN_DATA: &[u8] = &[
 pub struct Server {
     /// Battery service
     batt: BatteryService,
-    pressure: EnviroSensingService,
+    enviro: EnviroSensingService,    
 }
 
 /// GATT server task: is this necessary?
@@ -63,8 +62,7 @@ pub async fn ble_server_task(spawner: Spawner, server: Server, sd: &'static Soft
 
     
         match peripheral::advertise_connectable(sd, adv, &config).await {
-            Ok(conn) => {
-                
+            Ok(conn) => {                
                 unwrap!(spawner.spawn(conn_task(server, conn)));
             }
             Err(e) => error!("{:?}",e),
@@ -87,11 +85,15 @@ async fn conn_task(
         ServerEvent::Batt(BatteryServiceEvent::BatteryLevelCccdWrite { notifications }) => {
             info!("battery notifications: {}", notifications);
         }
-        
-        ServerEvent::Pressure(EnviroSensingServiceEvent::PressureCccdWrite { notifications }) => {
-            info!("pressure notifications: {}", notifications);
+        ServerEvent::Enviro(EnviroSensingServiceEvent::HumidityCccdWrite { notifications }) => {
+            info!("humidity notifications: {}", notifications);
         }
-        
+        ServerEvent::Enviro(EnviroSensingServiceEvent::TemperatureCccdWrite { notifications }) => {
+            info!("temperature notifications: {}", notifications);
+        }
+        ServerEvent::Enviro(EnviroSensingServiceEvent::PressureCccdWrite { notifications }) => {
+            info!("pressure notifications: {}", notifications);
+        }    
     });
 
     pin_mut!(data_future);
@@ -120,8 +122,10 @@ async fn notify_data<'a>(server: &'a Server,
                 
         let batt_level: u8 = crate::messages::ADC_SIGNAL.wait().await;
 
-        let pressure: u32 = 1234;
+        //let pressure: u32 = crate::messages::PRESS_SIGNAL.wait().await;
         
+        let envdata = crate::messages::ENVIRO_SIGNAL.wait().await;
+
         // Try and notify the connected client of the new ADC value.
         match server.batt.battery_level_notify(connection, &batt_level) {
             Ok(_) => info!("Battery adc_raw_value: {=u8}", &batt_level),
@@ -129,11 +133,20 @@ async fn notify_data<'a>(server: &'a Server,
         };
 
         // Try and notify the connected client of the new presure value.
-        match server.pressure.pressure_notify(connection, &pressure) {
-            Ok(_) => info!("Pressure value: {=u32}", &pressure),
-            Err(_) => unwrap!(server.pressure.pressure_set(&pressure)),
+        match server.enviro.pressure_notify(connection, &envdata.pressure) {
+            Ok(_) => info!("Pressure value: {=u32}", &envdata.pressure),
+            Err(_) => unwrap!(server.enviro.pressure_set(&envdata.pressure)),
         };
-        
+        // Try and notify the connected client of the new temperature value.
+        match server.enviro.temperature_notify(connection, &envdata.temperature) {
+            Ok(_) => info!("Temperature value: {=u32}", &envdata.temperature),
+            Err(_) => unwrap!(server.enviro.temperature_set(&envdata.temperature)),
+        };
+        // Try and notify the connected client of the new humidity value.
+        match server.enviro.humidity_notify(connection, &envdata.humidity) {
+            Ok(_) => info!("Humidity value: {=u32}", &envdata.humidity),
+            Err(_) => unwrap!(server.enviro.humidity_set(&envdata.humidity)),
+};
 
         // Sleep for one second.        
         //Timer::after(Duration::from_secs(1)).await

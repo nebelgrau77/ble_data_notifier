@@ -7,10 +7,13 @@ pub struct BatteryService {
     pub battery_level: u8,
 }
 
-/// Environmental sensing service
+/// Environmental sensing service - pressure, humidity, temperature
 #[nrf_softdevice::gatt_service(uuid = "181a")]
-pub struct EnviroSensingService {
+pub struct EnviroSensingService {    
+    #[characteristic(uuid = "2a6e", read, notify)]
+    pub temperature: u32,
+    #[characteristic(uuid = "2a6f", read, notify)]
+    pub humidity: u32,
     #[characteristic(uuid = "2a6d", read, notify)]
     pub pressure: u32,
 }
-

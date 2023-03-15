@@ -45,34 +45,11 @@ impl Board {
         twim1_irq.set_priority(Priority::P3);
         let twim1 = Twim::new(p.TWISPI1, twim1_irq, p.P0_14, p.P0_15, twim_config);
         
+        // internal pins necessary for the sensor to work - control power supply to the sensors
         let vdd_env = Output::new(p.P0_22.degrade(), Level::High, OutputDrive::Standard);
         let r_pullup = Output::new(p.P1_00.degrade(), Level::High, OutputDrive::Standard);
 
-        /*
-
-        // for internal need TWIM1
-        
-        TWIM1 sda: p.P0_14, scl: p.P0_15
-
-        let twim1 = 
-        
-        */
-
-        /*
-        let _vdd_env = port0.p0_22.into_push_pull_output(Level::High); // powers the HTS221 sensor, as per board schematics
-        let _r_pullup = port1.p1_00.into_push_pull_output(Level::High); // necessary for SDA1 and SCL1 to work, as per board schematics
-        */
-
-        /*
-        let mut uart_config = uarte::Config::default();
-        uart_config.parity = uarte::Parity::EXCLUDED;
-        uart_config.baudrate = uarte::Baudrate::BAUD115200;
-        let uart_irq = interrupt::take!(UARTE0_UART0);
-        uart_irq.set_priority(Priority::P3);
-        let uart = uarte::Uarte::new(p.UARTE0, uart_irq, p.P1_10, p.P1_03, uart_config);
-         */
-
-
+       
         Board {             
             twim0,
             twim1,            

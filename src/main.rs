@@ -32,6 +32,7 @@ use ble_softdev_test::{
     ble::{sd, server},
     device::Board,
     messages,    
+    messages::Enviro,
     };
 
 use lps22hb::interface::{I2cInterface, i2c::I2cAddress};
@@ -101,8 +102,12 @@ async fn main(spawner: Spawner) {
     // Run BLE server task - is that necessary?
     unwrap!(spawner.spawn(server::ble_server_task(spawner, server, sd)));
 
+
+
     loop {        
         
+        // reading ADC value (battery level)
+
         let mut buf = [0i16; 1];
         adc.sample(&mut buf).await;
 
@@ -111,15 +116,28 @@ async fn main(spawner: Spawner) {
 
         let batt_level: u8 = (((adc_raw_value / 256) + 128) * 100 / 255) as u8;
 
-        /*
-        batt_level = match batt_level {
-            101u8 => 0u8,
-            _ => batt_level + 1,
-        };
-         */
-
         messages::ADC_SIGNAL.signal(batt_level);
-       
+
+        // reading pressure value
+
+        let mut enviro = Enviro {
+            temperature: 2567,
+            pressure: 10135,
+            humidity: 5678,
+        };
+
+        lps22.one_shot().unwrap();
+
+        let press = lps22.read_pressure().unwrap();
+
+        enviro.pressure = (press * 100.0) as u32;
+
+        //let pressure: u32 = (press * 100.0) as u32;
+
+        //messages::PRESS_SIGNAL.signal(pressure);
+
+        messages::ENVIRO_SIGNAL.signal(enviro);
+
         Timer::after(Duration::from_millis(1000)).await;
 
         if led.is_set_high() {
@@ -132,35 +150,3 @@ async fn main(spawner: Spawner) {
 }
 
 
-
-
-/*
-
-NEED TO CREATE SOMETHING SIMILAR IN THE DATA NOTIFY
-
-   loop {       
-
-        //lps22.enable_one_shot().unwrap();
-        lps22.one_shot().unwrap();
-
-        let mut buf = ArrayString::<[u8; 32]>::new();
-
-        let temp = lps22.read_temperature().unwrap();            
-        let press = lps22.read_pressure().unwrap();
-
-        format_reading(&mut buf, press, temp);
-        serial.write_str(buf.as_str()).unwrap();
-
-        // toggle the LED
-        if led.is_set_high().unwrap() {
-            led.set_low().unwrap();
-            }
-        else {
-            led.set_high().unwrap();
-            }
-
-        delay.delay_ms(1000_u32);
-   <
-
-
- */
