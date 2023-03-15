@@ -23,14 +23,14 @@ use static_cell::StaticCell;
 const ADV_DATA: &[u8] = 
     &[
         0x02, 0x01, nrf_softdevice::raw::BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE as u8,
-        0x03, 0x03, 0x0F, 0x18,
+        0x05, 0x03, 0x0F, 0x18, 0x1a, 0x18,
         0x09, 0x09, b'B', b'L', b'E', b's', b'e', b'n', b's', b'e', 
     ];
 
 // BLE scan data
 #[rustfmt::skip]
 const SCAN_DATA: &[u8] = &[
-    0x03, 0x03, 0x0F, 0x18, 
+    0x05, 0x03, 0x0F, 0x18, 0x1a, 0x18,
     ];
 
 
@@ -40,7 +40,7 @@ const SCAN_DATA: &[u8] = &[
 pub struct Server {
     /// Battery service
     batt: BatteryService,
-    //temp: Thermometer,
+    pressure: EnviroSensingService,
 }
 
 /// GATT server task: is this necessary?
@@ -65,16 +65,12 @@ pub async fn ble_server_task(spawner: Spawner, server: Server, sd: &'static Soft
         match peripheral::advertise_connectable(sd, adv, &config).await {
             Ok(conn) => {
                 
-                
-                // need saadc here
-                
                 unwrap!(spawner.spawn(conn_task(server, conn)));
             }
             Err(e) => error!("{:?}",e),
          }
 
     }
-
      
 
 }
@@ -84,7 +80,6 @@ pub async fn ble_server_task(spawner: Spawner, server: Server, sd: &'static Soft
 async fn conn_task(
     server: &'static Server,
     conn: Connection,    
-    
 
 ) {
     let data_future = notify_data(server, &conn);  // why can't saadc be borrowed as mutable?
@@ -92,11 +87,11 @@ async fn conn_task(
         ServerEvent::Batt(BatteryServiceEvent::BatteryLevelCccdWrite { notifications }) => {
             info!("battery notifications: {}", notifications);
         }
-        /*
-        ServerEvent::Temp(ThermometerEvent::TemperatureCccdWrite { notifications }) => {
-            info!("temperature notifications: {}", notifications);
+        
+        ServerEvent::Pressure(EnviroSensingServiceEvent::PressureCccdWrite { notifications }) => {
+            info!("pressure notifications: {}", notifications);
         }
-         */
+        
     });
 
     pin_mut!(data_future);
@@ -124,12 +119,21 @@ async fn notify_data<'a>(server: &'a Server,
     loop {
                 
         let batt_level: u8 = crate::messages::ADC_SIGNAL.wait().await;
+
+        let pressure: u32 = 1234;
         
         // Try and notify the connected client of the new ADC value.
         match server.batt.battery_level_notify(connection, &batt_level) {
             Ok(_) => info!("Battery adc_raw_value: {=u8}", &batt_level),
             Err(_) => unwrap!(server.batt.battery_level_set(&batt_level)),
         };
+
+        // Try and notify the connected client of the new presure value.
+        match server.pressure.pressure_notify(connection, &pressure) {
+            Ok(_) => info!("Pressure value: {=u32}", &pressure),
+            Err(_) => unwrap!(server.pressure.pressure_set(&pressure)),
+        };
+        
 
         // Sleep for one second.        
         //Timer::after(Duration::from_secs(1)).await

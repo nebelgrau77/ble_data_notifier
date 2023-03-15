@@ -131,3 +131,36 @@ async fn main(spawner: Spawner) {
     }
 }
 
+
+
+
+/*
+
+NEED TO CREATE SOMETHING SIMILAR IN THE DATA NOTIFY
+
+   loop {       
+
+        //lps22.enable_one_shot().unwrap();
+        lps22.one_shot().unwrap();
+
+        let mut buf = ArrayString::<[u8; 32]>::new();
+
+        let temp = lps22.read_temperature().unwrap();            
+        let press = lps22.read_pressure().unwrap();
+
+        format_reading(&mut buf, press, temp);
+        serial.write_str(buf.as_str()).unwrap();
+
+        // toggle the LED
+        if led.is_set_high().unwrap() {
+            led.set_low().unwrap();
+            }
+        else {
+            led.set_high().unwrap();
+            }
+
+        delay.delay_ms(1000_u32);
+   <
+
+
+ */
