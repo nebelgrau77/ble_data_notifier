@@ -31,8 +31,7 @@ use ble_softdev_test::{
     self as _,
     ble::{sd, server},
     device::Board,
-    messages,
-    //helpers,
+    messages,    
     };
 
 
@@ -51,7 +50,7 @@ pub fn init_adc(adc_pin: AnyInput, adc: SAADC) -> Saadc<'static, 1> {
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    info!("This is Micromod!");
+    info!("This is BLESense!");
 
     // First we get the peripherals access crate.
     let mut config = embassy_nrf::config::Config::default();

@@ -1,4 +1,6 @@
 //! Device definitions
-mod micromod;
+//mod micromod;
+mod blesense;
 
-pub use micromod::Board;
+//pub use micromod::Board;
+pub use blesense::Board;
