@@ -49,6 +49,8 @@ atomic-pool = "1.0.0"
 static_cell = "1.0.0"
 embassy-futures = { version = "0.1.0" }
 
+lps22hb = "*"
+
 [[bin]]
 name = "ble_softdev_test"
 required-features = ["ble-gatt-server"]

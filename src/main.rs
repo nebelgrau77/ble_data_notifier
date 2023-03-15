@@ -34,6 +34,8 @@ use ble_softdev_test::{
     messages,    
     };
 
+use lps22hb::interface::{I2cInterface, i2c::I2cAddress};
+use lps22hb::LPS22HB;
 
 /*
 pub fn init_adc(adc_pin: AnyInput, adc: SAADC) -> Saadc<'static, 1> {
@@ -68,6 +70,22 @@ async fn main(spawner: Spawner) {
     //let mut saadc = helpers::init_adc(adc_pin, p.SAADC);
     // Indicated: wait for ADC calibration.
     adc.calibrate().await;
+
+
+
+    let _vdd_env = board.vdd_env; // powers the LPS22HB sensor, as per board schematics
+    let _r_pullup = board.r_pullup; // necessary for SDA1 and SCL1 to work, as per board schematics
+
+
+    let mut i2c1 = board.twim1;
+
+    // configure I2C interface for the LPS22HB driver
+    let i2c_interface = I2cInterface::init(i2c1, I2cAddress::SA0_GND);
+       
+    // create a new driver instance with the I2C interface    
+    let mut lps22 = LPS22HB::new(i2c_interface);
+
+    
 
     // Enable SoftDevice
     let sd = nrf_softdevice::Softdevice::enable(&sd::softdevice_config());

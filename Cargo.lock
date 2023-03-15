@@ -124,6 +124,7 @@ dependencies = [
  "fixed",
  "futures",
  "heapless",
+ "lps22hb",
  "nrf-softdevice",
  "nrf-softdevice-s140",
  "panic-probe",
@@ -618,6 +619,15 @@ checksum = "435011366fe56583b16cf956f9df0095b405b82d76425bc8981c0e22e60ec4df"
 dependencies = [
  "autocfg",
  "scopeguard",
+]
+
+[[package]]
+name = "lps22hb"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "142a7d1479250ec0e6f23fe4f74f71c9fce9c76dd474bd1d7658012567e28d99"
+dependencies = [
+ "embedded-hal 0.2.7",
 ]
 
 [[package]]
