@@ -38,6 +38,8 @@ use ble_softdev_test::{
 use lps22hb::interface::{I2cInterface, i2c::I2cAddress};
 use lps22hb::LPS22HB;
 
+use hts221;
+
 /*
 pub fn init_adc(adc_pin: AnyInput, adc: SAADC) -> Saadc<'static, 1> {
     // Then we initialize the ADC. We are only using one channel in this example.
@@ -86,7 +88,11 @@ async fn main(spawner: Spawner) {
     // create a new driver instance with the I2C interface    
     let mut lps22 = LPS22HB::new(i2c_interface);
 
-    
+    let mut hts221 = hts221::Builder::new()                
+    .with_default_7bit_address()
+    .with_avg_t(hts221::AvgT::Avg256)
+    .with_avg_h(hts221::AvgH::Avg512)    
+    .build(&mut i2c1).unwrap();
 
     // Enable SoftDevice
     let sd = nrf_softdevice::Softdevice::enable(&sd::softdevice_config());
@@ -121,16 +127,25 @@ async fn main(spawner: Spawner) {
         // reading pressure value
 
         let mut enviro = Enviro {
-            temperature: 2567,
+            temperature: 9999,
             pressure: 10135,
-            humidity: 5678,
+            humidity: 9999,
         };
 
         lps22.one_shot().unwrap();
 
         let press = lps22.read_pressure().unwrap();
 
-        enviro.pressure = (press * 100.0) as u32;
+        enviro.pressure = (press * 10.0) as u32;
+
+        let temperature_x8 = hts221.temperature_x8(&mut i2c1).unwrap();
+        let temp = temperature_x8 / 8;
+
+        let humidity_x2 = hts221.humidity_x2(&mut i2c1).unwrap();
+        let hum = humidity_x2 / 2;
+
+        enviro.temperature = temp  as u32;
+        enviro.humidity = hum as u32;
 
         //let pressure: u32 = (press * 100.0) as u32;
 

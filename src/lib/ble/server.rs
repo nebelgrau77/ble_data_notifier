@@ -23,7 +23,7 @@ const ADV_DATA: &[u8] =
     &[
         0x02, 0x01, nrf_softdevice::raw::BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE as u8,
         0x05, 0x03, 0x0F, 0x18, 0x1a, 0x18, 
-        0x09, 0x09, b'B', b'L', b'E', b's', b'e', b'n', b's', b'e', 
+        0x09, 0x09, b'S', b'i', b'k', b'o', b'r', b'a', b'-', b'2', 
     ];
 
 // BLE scan data

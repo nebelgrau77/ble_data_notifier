@@ -124,6 +124,7 @@ dependencies = [
  "fixed",
  "futures",
  "heapless",
+ "hts221",
  "lps22hb",
  "nrf-softdevice",
  "nrf-softdevice-s140",
@@ -597,6 +598,15 @@ dependencies = [
  "rustc_version 0.4.0",
  "spin",
  "stable_deref_trait",
+]
+
+[[package]]
+name = "hts221"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c501f927def5707742f33a04a8f5ec6acda9843eb867b11645568b1fec540a17"
+dependencies = [
+ "embedded-hal 0.2.7",
 ]
 
 [[package]]
