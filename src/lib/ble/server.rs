@@ -139,12 +139,12 @@ async fn notify_data<'a>(server: &'a Server,
         };
         // Try and notify the connected client of the new temperature value.
         match server.enviro.temperature_notify(connection, &envdata.temperature) {
-            Ok(_) => info!("Temperature value: {=u32}", &envdata.temperature),
+            Ok(_) => info!("Temperature value: {=i16}", &envdata.temperature),
             Err(_) => unwrap!(server.enviro.temperature_set(&envdata.temperature)),
         };
         // Try and notify the connected client of the new humidity value.
         match server.enviro.humidity_notify(connection, &envdata.humidity) {
-            Ok(_) => info!("Humidity value: {=u32}", &envdata.humidity),
+            Ok(_) => info!("Humidity value: {=u16}", &envdata.humidity),
             Err(_) => unwrap!(server.enviro.humidity_set(&envdata.humidity)),
 };
 

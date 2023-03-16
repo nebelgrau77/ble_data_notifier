@@ -42,19 +42,8 @@ use hts221;
 
 use shared_bus;
 
-/*
-pub fn init_adc(adc_pin: AnyInput, adc: SAADC) -> Saadc<'static, 1> {
-    // Then we initialize the ADC. We are only using one channel in this example.
-    let config = saadc::Config::default();
-    let channel_cfg = saadc::ChannelConfig::single_ended(adc_pin.degrade_saadc());
-    let irq = interrupt::take!(SAADC);
-    irq.set_priority(interrupt::Priority::P3);
-    let saadc = saadc::Saadc::new(adc, irq, config, [channel_cfg]);
-    saadc
-}
- */
 
- const BOOT_DELAY_MS: u64 = 100; //small delay for the I2C to initiate correctly and start on boot without having to reset the board
+const BOOT_DELAY_MS: u64 = 100; //small delay for the I2C to initiate correctly and start on boot without having to reset the board
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
@@ -77,11 +66,8 @@ async fn main(spawner: Spawner) {
     // Indicated: wait for ADC calibration.
     adc.calibrate().await;
 
-
-
     let _vdd_env = board.vdd_env; // powers the LPS22HB sensor, as per board schematics
     let _r_pullup = board.r_pullup; // necessary for SDA1 and SCL1 to work, as per board schematics
-
 
     Timer::after(Duration::from_millis(BOOT_DELAY_MS)).await;
 
@@ -89,36 +75,27 @@ async fn main(spawner: Spawner) {
 
     //let manager = shared_bus::CortexMBusManager::new(i2c1);
 
-    //let bus = shared_bus::BusManagerSimple::new(i2c1);
+    let bus = shared_bus::BusManagerSimple::new(i2c1);
 
-
-    //let lps_bus = bus.acquire_i2c();
-
-    /*
+    let lps_bus = bus.acquire_i2c();
 
     // configure I2C interface for the LPS22HB driver
     let i2c_interface = I2cInterface::init(lps_bus, I2cAddress::SA0_GND);
        
     // create a new driver instance with the I2C interface    
     let mut lps22 = LPS22HB::new(i2c_interface);
-
-    */
     
-    //let mut hts_bus = bus.acquire_i2c();
+    let mut hts_bus = bus.acquire_i2c();
 
     let mut hts221 = hts221::Builder::new()                
-    .with_default_7bit_address()
-    .with_avg_t(hts221::AvgT::Avg256)
-    .with_avg_h(hts221::AvgH::Avg512)    
-    .build(&mut i2c1).unwrap();
-
-     
-
+        .with_default_7bit_address()        
+        .with_data_rate(hts221::DataRate::Continuous7Hz)   
+        .with_boot()     
+        .build(&mut hts_bus).unwrap();
+    
     // Enable SoftDevice
     let sd = nrf_softdevice::Softdevice::enable(&sd::softdevice_config());
-
-    // let server = unwrap!(Server::new(sd));
-
+    
     // Create BLE GATT server
     let server = unwrap!(server::Server::new(sd));
 
@@ -127,8 +104,6 @@ async fn main(spawner: Spawner) {
 
     // Run BLE server task - is that necessary?
     unwrap!(spawner.spawn(server::ble_server_task(spawner, server, sd)));
-
-
 
     loop {        
         
@@ -144,36 +119,59 @@ async fn main(spawner: Spawner) {
 
         messages::ADC_SIGNAL.signal(batt_level);
 
-        // reading pressure value
+        // reading environment data 
 
         let mut enviro = Enviro {
             temperature: 9999,
-            pressure: 10135,
+            pressure: 9999,
             humidity: 9999,
         };
-
-        /*
+        
+        // reading pressure
 
         lps22.one_shot().unwrap();
 
         let press = lps22.read_pressure().unwrap();
 
         enviro.pressure = (press * 10.0) as u32;
-         */
 
-        let temperature_x8 = hts221.temperature_x8(&mut i2c1).unwrap();
+
+        // check if data ready
+        match hts221.status(&mut hts_bus) {
+            Ok(status) => {
+                if status.humidity_data_available() && status.temperature_data_available() {                
+                    
+                    info!("Data was available"); // if ready go to measurement       
+
+                } else {
+
+                    Timer::after(Duration::from_millis(1000)).await; // wait another second
+
+                }
+                 
+            }
+            Err(_) => {
+                    
+                enviro.temperature = 9999;
+                enviro.humidity = 9999;
+            },
+        }
+
+        // read the temperature
+
+        let temperature_x8 = hts221.temperature_x8(&mut hts_bus).unwrap();     
+        //let temp_conv = hts221.convert_temperature_x8(temperature_x8);
         let temp = temperature_x8 / 8;
+        //let temp = temp_conv / 8;
 
-        let humidity_x2 = hts221.humidity_x2(&mut i2c1).unwrap();
+        // read the humidity
+
+        let humidity_x2 = hts221.humidity_x2(&mut hts_bus).unwrap();        
         let hum = humidity_x2 / 2;
 
-        enviro.temperature = temp  as u32;
-        enviro.humidity = hum as u32;
- 
-        //let pressure: u32 = (press * 100.0) as u32;
-
-        //messages::PRESS_SIGNAL.signal(pressure);
-
+        enviro.temperature = temp * 100;
+        enviro.humidity = hum * 100 as u16;
+         
         messages::ENVIRO_SIGNAL.signal(enviro);
 
         Timer::after(Duration::from_millis(1000)).await;
