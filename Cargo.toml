@@ -52,6 +52,8 @@ embassy-futures = { version = "0.1.0" }
 lps22hb = "*"
 hts221 = "0.3"
 
+shared-bus = {version = "0.1.4", features = ["cortexm"]}
+
 [[bin]]
 name = "ble_softdev_test"
 required-features = ["ble-gatt-server"]
