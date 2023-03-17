@@ -90,7 +90,9 @@ async fn main(spawner: Spawner) {
 
     let mut hts221 = hts221::Builder::new()                
         .with_default_7bit_address()        
-        .with_data_rate(hts221::DataRate::Continuous7Hz)   
+        .with_data_rate(hts221::DataRate::Continuous1Hz)   
+        .with_avg_h(hts221::AvgH::Avg32)
+        .with_avg_t(hts221::AvgT::Avg32)
         .with_boot()     
         .build(&mut hts_bus).unwrap();
     
