@@ -123,7 +123,7 @@ async fn main(spawner: Spawner) {
         // reading environment data 
 
         let mut enviro = Enviro {
-            temperature: 9999,
+            temperature: -9999,
             pressure: 9999,
             humidity: 9999,
         };
@@ -158,21 +158,25 @@ async fn main(spawner: Spawner) {
             },
         }
 
+
+
         // read the temperature
 
         let temperature_x8 = hts221.temperature_x8(&mut hts_bus).unwrap();     
-        //let temp_conv = hts221.convert_temperature_x8(temperature_x8);
-        let temp = temp_conv(temperature_x8);
-        //let temp = temp_conv / 8;
+        
+        //let temp = temp_conv(temperature_x8);
+        //let temp = temperature_x8;
 
         // read the humidity
 
         let humidity_x2 = hts221.humidity_x2(&mut hts_bus).unwrap();        
-        let hum = hum_conv(humidity_x2);
+        //let hum = hum_conv(humidity_x2);
+        //let hum = humidity_x2;
 
-        enviro.temperature = temp * 100;
-        enviro.humidity = hum * 100 as u16;
-         
+        enviro.temperature = temp_conv(temperature_x8);
+        enviro.humidity = hum_conv(humidity_x2);
+
+
         messages::ENVIRO_SIGNAL.signal(enviro);
 
         Timer::after(Duration::from_millis(1000)).await;
