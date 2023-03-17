@@ -51,8 +51,10 @@ embassy-futures = { version = "0.1.0" }
 
 lps22hb = "*"
 hts221 = "0.3"
-
 shared-bus = "0.2.5"
+
+apds9960 = "0.1"
+nb = "1"
 
 [[bin]]
 name = "ble_softdev_test"

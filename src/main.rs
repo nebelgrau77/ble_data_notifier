@@ -43,6 +43,10 @@ use hts221;
 
 use shared_bus;
 
+use nb::block;
+
+use apds9960::Apds9960;
+
 
 const BOOT_DELAY_MS: u64 = 100; //small delay for the I2C to initiate correctly and start on boot without having to reset the board
 
@@ -96,6 +100,15 @@ async fn main(spawner: Spawner) {
         .with_boot()     
         .build(&mut hts_bus).unwrap();
     
+
+    // initialize APDS sensor    
+
+    let apds_bus = bus.acquire_i2c();
+
+    let mut apds = Apds9960::new(apds_bus);
+    apds.enable().unwrap();
+    apds.enable_light().unwrap();
+
     // Enable SoftDevice
     let sd = nrf_softdevice::Softdevice::enable(&sd::softdevice_config());
     
@@ -128,6 +141,7 @@ async fn main(spawner: Spawner) {
             temperature: -9999,
             pressure: 9999,
             humidity: 9999,
+            irradiance: 9999,
         };
         
         // reading pressure
@@ -154,13 +168,10 @@ async fn main(spawner: Spawner) {
                  
             }
             Err(_) => {
-                    
                 enviro.temperature = 9999;
                 enviro.humidity = 9999;
             },
         }
-
-
 
         // read the temperature
 
@@ -178,6 +189,11 @@ async fn main(spawner: Spawner) {
         enviro.temperature = temp_conv(temperature_x8);
         enviro.humidity = hum_conv(humidity_x2);
 
+
+        // read light
+        let light = block!(apds.read_light()).unwrap();
+
+        enviro.irradiance = light.clear;
 
         messages::ENVIRO_SIGNAL.signal(enviro);
 

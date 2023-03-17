@@ -94,8 +94,14 @@ async fn conn_task(
         ServerEvent::Enviro(EnviroSensingServiceEvent::PressureCccdWrite { notifications }) => {
             info!("pressure notifications: {}", notifications);
         }    
-    });
+        ServerEvent::Enviro(EnviroSensingServiceEvent::IrradianceCccdWrite { notifications }) => {
+            info!("irradiance notifications: {}", notifications);
+        }   
 
+
+
+    });
+    
     pin_mut!(data_future);
     pin_mut!(gatt_future);
 
@@ -146,7 +152,12 @@ async fn notify_data<'a>(server: &'a Server,
         match server.enviro.humidity_notify(connection, &envdata.humidity) {
             Ok(_) => info!("Humidity value: {=u16}", &envdata.humidity),
             Err(_) => unwrap!(server.enviro.humidity_set(&envdata.humidity)),
-};
+        };
+        // Try and notify the connected client of the new humidity value.
+        match server.enviro.irradiance_notify(connection, &envdata.irradiance) {
+            Ok(_) => info!("Irradiance value: {=u16}", &envdata.irradiance),
+            Err(_) => unwrap!(server.enviro.irradiance_set(&envdata.irradiance)),
+        };
 
         // Sleep for one second.        
         //Timer::after(Duration::from_secs(1)).await
