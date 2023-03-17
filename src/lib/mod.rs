@@ -12,3 +12,4 @@ use panic_probe as _;
 pub mod ble;
 pub mod device;
 pub mod messages;
+pub mod helpers;

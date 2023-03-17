@@ -33,6 +33,7 @@ use ble_softdev_test::{
     device::Board,
     messages,    
     messages::Enviro,
+    helpers::*,
     };
 
 use lps22hb::interface::{I2cInterface, i2c::I2cAddress};
@@ -161,13 +162,13 @@ async fn main(spawner: Spawner) {
 
         let temperature_x8 = hts221.temperature_x8(&mut hts_bus).unwrap();     
         //let temp_conv = hts221.convert_temperature_x8(temperature_x8);
-        let temp = temperature_x8 / 8;
+        let temp = temp_conv(temperature_x8);
         //let temp = temp_conv / 8;
 
         // read the humidity
 
         let humidity_x2 = hts221.humidity_x2(&mut hts_bus).unwrap();        
-        let hum = humidity_x2 / 2;
+        let hum = hum_conv(humidity_x2);
 
         enviro.temperature = temp * 100;
         enviro.humidity = hum * 100 as u16;
