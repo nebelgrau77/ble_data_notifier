@@ -38,7 +38,8 @@ const SCAN_DATA: &[u8] = &[
 #[nrf_softdevice::gatt_server]
 pub struct Server {
     /// Battery service
-    batt: BatteryService,
+    //batt: BatteryService,
+    adc: RawAdcService,
     enviro: EnviroSensingService,    
 }
 
@@ -82,8 +83,13 @@ async fn conn_task(
 ) {
     let data_future = notify_data(server, &conn);  // why can't saadc be borrowed as mutable?
     let gatt_future = gatt_server::run(&conn, server, |e| match e {
+        /*
         ServerEvent::Batt(BatteryServiceEvent::BatteryLevelCccdWrite { notifications }) => {
             info!("battery notifications: {}", notifications);
+        }
+         */
+        ServerEvent::Adc(RawAdcServiceEvent::AdcValueCccdWrite { notifications }) => {
+            info!("raw adc value notifications: {}", notifications);
         }
         ServerEvent::Enviro(EnviroSensingServiceEvent::HumidityCccdWrite { notifications }) => {
             info!("humidity notifications: {}", notifications);
@@ -126,17 +132,27 @@ async fn notify_data<'a>(server: &'a Server,
 {
     loop {
                 
-        let batt_level: u8 = crate::messages::ADC_SIGNAL.wait().await;
+        //let batt_level: u8 = crate::messages::ADC_SIGNAL.wait().await;
+
+        let adc_raw_value: i16 = crate::messages::ADC_SIGNAL.wait().await;
 
         //let pressure: u32 = crate::messages::PRESS_SIGNAL.wait().await;
         
         let envdata = crate::messages::ENVIRO_SIGNAL.wait().await;
 
+        /*
         // Try and notify the connected client of the new ADC value.
         match server.batt.battery_level_notify(connection, &batt_level) {
-            Ok(_) => info!("Battery adc_raw_value: {=u8}", &batt_level),
+            Ok(_) => info!("Battery adc_raw_value: {=i16}", &batt_level),
             Err(_) => unwrap!(server.batt.battery_level_set(&batt_level)),
         };
+         */
+
+        // Try and notifiy the connected client of the new raw ADC value
+        match server.adc.adc_value_notify(connection, &adc_raw_value) {
+            Ok(_) => info!("Raw ADC value: {=i16}", &adc_raw_value),
+            Err(_) => unwrap!(server.adc.adc_value_set(&adc_raw_value)),
+        }
 
         // Try and notify the connected client of the new presure value.
         match server.enviro.pressure_notify(connection, &envdata.pressure) {

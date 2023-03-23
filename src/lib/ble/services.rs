@@ -4,7 +4,14 @@
 #[nrf_softdevice::gatt_service(uuid = "180f")]
 pub struct BatteryService {
     #[characteristic(uuid = "2a19", read, notify)]
-    pub battery_level: i16,
+    pub battery_level: u8,
+}
+
+/// Raw ADC reading
+#[nrf_softdevice::gatt_service(uuid = "999e06eb-bc32-401d-abd9-d88781031d04")]
+pub struct RawAdcService {
+    #[characteristic(uuid = "999e06eb-bc32-401d-abd9-d88781041d04", read, notify)]
+    pub adc_value: i16,
 }
 
 /// Environmental sensing service - pressure, humidity, temperature, irradiance
