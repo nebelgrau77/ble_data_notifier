@@ -131,9 +131,9 @@ async fn main(spawner: Spawner) {
         // We only sampled one ADC channel.
         let adc_raw_value: i16 = buf[0];
 
-        let batt_level: u8 = (((adc_raw_value / 256) + 128) * 100 / 255) as u8;
+        // let batt_level: u8 = (((adc_raw_value / 256) + 128) * 100 / 255) as u8;
 
-        messages::ADC_SIGNAL.signal(batt_level);
+        messages::ADC_SIGNAL.signal(adc_raw_value);
 
         // reading environment data 
 
