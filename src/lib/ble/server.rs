@@ -3,7 +3,7 @@ use super::services::*;
 use defmt::*;
 use embassy_executor::Spawner;
 use embassy_futures::block_on;
-use embassy_nrf::saadc::Saadc;
+// use embassy_nrf::saadc::Saadc;
 use embassy_sync::pubsub::publisher;
 use embassy_time::{Duration, Timer};
 use futures::{
@@ -15,7 +15,6 @@ use nrf_softdevice::{
     Softdevice,
 };
 use static_cell::StaticCell;
-
 
 /// BLE advertising data
 
@@ -32,7 +31,6 @@ const ADV_DATA: &[u8] =
 const SCAN_DATA: &[u8] = &[
     0x03, 0x03, 0x0F, 0x18, 
     ];
-
 
 /// BLE GATT server
 
@@ -54,49 +52,35 @@ pub async fn ble_server_task(spawner: Spawner, server: Server, sd: &'static Soft
 
     let config = peripheral::Config::default();
 
-    let adv = peripheral::ConnectableAdvertisement::ScannableUndirected { 
+    let adv = peripheral::ConnectableAdvertisement::ScannableUndirected {
         adv_data: ADV_DATA,
-        scan_data: SCAN_DATA,        
+        scan_data: SCAN_DATA,
     };
-    
-    loop {
 
-    
+    loop {
         match peripheral::advertise_connectable(sd, adv, &config).await {
             Ok(conn) => {
-                
-                
                 // need saadc here
-                
+
                 unwrap!(spawner.spawn(conn_task(server, conn)));
             }
-            Err(e) => error!("{:?}",e),
-         }
-
+            Err(e) => error!("{:?}", e),
+        }
     }
-
-     
-
 }
 
 /// BLE connection task. - is this needed???
 #[embassy_executor::task]
-async fn conn_task(
-    server: &'static Server,
-    conn: Connection,    
-    
-
-) {
-    let data_future = notify_data(server, &conn);  // why can't saadc be borrowed as mutable?
+async fn conn_task(server: &'static Server, conn: Connection) {
+    let data_future = notify_data(server, &conn); // why can't saadc be borrowed as mutable?
     let gatt_future = gatt_server::run(&conn, server, |e| match e {
         ServerEvent::Batt(BatteryServiceEvent::BatteryLevelCccdWrite { notifications }) => {
             info!("battery notifications: {}", notifications);
-        }
-        /*
-        ServerEvent::Temp(ThermometerEvent::TemperatureCccdWrite { notifications }) => {
-            info!("temperature notifications: {}", notifications);
-        }
-         */
+        } /*
+          ServerEvent::Temp(ThermometerEvent::TemperatureCccdWrite { notifications }) => {
+              info!("temperature notifications: {}", notifications);
+          }
+           */
     });
 
     pin_mut!(data_future);
@@ -112,27 +96,20 @@ async fn conn_task(
             }
         }
     };
-
 }
 
-
 /// Reads the current ADC value every second and notifies the connected client.
-async fn notify_data<'a>(server: &'a Server, 
-                        connection: &'a Connection,
-                        ) 
-{
+async fn notify_data<'a>(server: &'a Server, connection: &'a Connection) {
     loop {
-                
         let batt_level: u8 = crate::messages::ADC_SIGNAL.wait().await;
-        
+
         // Try and notify the connected client of the new ADC value.
         match server.batt.battery_level_notify(connection, &batt_level) {
             Ok(_) => info!("Battery adc_raw_value: {=u8}", &batt_level),
             Err(_) => unwrap!(server.batt.battery_level_set(&batt_level)),
         };
 
-        // Sleep for one second.        
+        // Sleep for one second.
         //Timer::after(Duration::from_secs(1)).await
-        
     }
 }

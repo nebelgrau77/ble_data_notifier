@@ -1,6 +1,7 @@
 //! Device definitions
 //mod micromod;
-mod blesense;
+//mod blesense;
+mod xiaoble;
 
 //pub use micromod::Board;
-pub use blesense::Board;
+pub use xiaoble::Board;

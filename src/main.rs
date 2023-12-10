@@ -31,9 +31,8 @@ use ble_softdev_test::{
     self as _,
     ble::{sd, server},
     device::Board,
-    messages,    
-    };
-
+    messages,
+};
 
 /*
 pub fn init_adc(adc_pin: AnyInput, adc: SAADC) -> Saadc<'static, 1> {
@@ -47,7 +46,6 @@ pub fn init_adc(adc_pin: AnyInput, adc: SAADC) -> Saadc<'static, 1> {
 }
  */
 
-
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
     info!("This is BLESense!");
@@ -59,15 +57,15 @@ async fn main(spawner: Spawner) {
     let p = embassy_nrf::init(config);
 
     let board = Board::init(p);
-    
-    let mut led = board.led;
 
-    let mut adc = board.adc;
+    let mut red = board.red;
+    let mut green = board.green;
+    let mut blue = board.blue;
 
     // get the ADC
     //let mut saadc = helpers::init_adc(adc_pin, p.SAADC);
     // Indicated: wait for ADC calibration.
-    adc.calibrate().await;
+    // adc.calibrate().await;
 
     // Enable SoftDevice
     let sd = nrf_softdevice::Softdevice::enable(&sd::softdevice_config());
@@ -83,15 +81,14 @@ async fn main(spawner: Spawner) {
     // Run BLE server task - is that necessary?
     unwrap!(spawner.spawn(server::ble_server_task(spawner, server, sd)));
 
-    loop {        
-        
-        let mut buf = [0i16; 1];
-        adc.sample(&mut buf).await;
+    loop {
+        // let mut buf = [0i16; 1];
+        // adc.sample(&mut buf).await;
 
         // We only sampled one ADC channel.
-        let adc_raw_value: i16 = buf[0];
+        // let adc_raw_value: i16 = buf[0];
 
-        let batt_level: u8 = (((adc_raw_value / 256) + 128) * 100 / 255) as u8;
+        let batt_level: u8 = 42_u8; // (((adc_raw_value / 256) + 128) * 100 / 255) as u8;
 
         /*
         batt_level = match batt_level {
@@ -101,15 +98,13 @@ async fn main(spawner: Spawner) {
          */
 
         messages::ADC_SIGNAL.signal(batt_level);
-       
+
         Timer::after(Duration::from_millis(1000)).await;
 
         if led.is_set_high() {
-            led.set_low()
+            green.set_low()
         } else {
-            led.set_high()
+            green.set_high()
         }
-
     }
 }
-
